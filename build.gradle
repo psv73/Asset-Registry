@@ -6,7 +6,7 @@ plugins {
 
 group = 'net.psv73'
 version = '0.0.1-SNAPSHOT'
-description = 'Asset Regystry project'
+description = 'Asset Registry project'
 
 java {
 	toolchain {
