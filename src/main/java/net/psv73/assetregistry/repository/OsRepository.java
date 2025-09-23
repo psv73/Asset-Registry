@@ -1,0 +1,4 @@
+package net.psv73.assetregistry.repository;
+import net.psv73.assetregistry.entity.Os;
+import org.springframework.data.jpa.repository.JpaRepository;
+public interface OsRepository extends JpaRepository<Os, Long> { }
