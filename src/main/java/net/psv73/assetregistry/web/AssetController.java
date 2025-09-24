@@ -33,7 +33,7 @@ public class AssetController {
     @PostMapping
     public ResponseEntity<Asset> create(@RequestBody Asset body) {
         Asset saved = assets.save(body);
-        return ResponseEntity.created(URI.create("/api/assets/" + saved.getId())).body(saved);
+        return ResponseEntity.created(URI.create(Assets.ROOT + saved.getId())).body(saved);
     }
 
     @PutMapping(BY_ID)

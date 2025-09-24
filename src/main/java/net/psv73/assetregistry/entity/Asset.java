@@ -1,10 +1,13 @@
 package net.psv73.assetregistry.entity;
 import jakarta.persistence.*; import lombok.*; import java.time.*;
-
 @Entity @Table(name="assets")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Asset {
   @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
+
+  @ManyToOne(optional=false, fetch=FetchType.LAZY) @JoinColumn(name="client_id")
+  private Client client;
+
   @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="asset_type_id") private AssetType assetType;
   @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="manufacturer_id") private Manufacturer manufacturer;
   @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="model_id") private Model model;

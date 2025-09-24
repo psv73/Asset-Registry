@@ -1,7 +1,4 @@
-﻿server:
-  port: 8080
-
-spring:
+﻿spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/asset_registry
     username: postgres
@@ -9,10 +6,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    properties:
-      hibernate:
-        jdbc:
-          time_zone: UTC
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+server:
+  port: 8080

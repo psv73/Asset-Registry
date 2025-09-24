@@ -4,6 +4,8 @@ import jakarta.persistence.*; import lombok.*;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Employee {
   @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
+  @ManyToOne(optional=false, fetch=FetchType.LAZY) @JoinColumn(name="client_id")
+  private Client client;
   private String lastName;
   private String firstName;
 }
