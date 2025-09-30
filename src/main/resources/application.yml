@@ -1,21 +1,23 @@
-﻿server:
-  port: 8080
-
-spring:
+﻿spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/asset_registry
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
-
+    username: asset
+    password: asset
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    open-in-view: false
     properties:
       hibernate.format_sql: true
-
+      hibernate.jdbc.time_zone: UTC
   flyway:
     enabled: true
     locations: classpath:db/migration
-    baseline-on-migrate: false
+    baseline-on-migrate: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO

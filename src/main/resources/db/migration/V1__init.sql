@@ -1,161 +1,196 @@
+-- V1__init.sql
+-- Initial schema based on DATABASE.md
 
--- Flyway Migration: V1__init.sql
--- PostgreSQL dialect
+-- === Base reference tables (no FKs to others) ===
 
--- 1) Reference tables without dependencies
-CREATE TABLE manufacturers (
-    id               BIGSERIAL PRIMARY KEY,
-    name             VARCHAR(200) NOT NULL,
-    note             TEXT,
-    CONSTRAINT ux_manufacturers_name UNIQUE (name)
+CREATE TABLE IF NOT EXISTS clients (
+    id      BIGSERIAL PRIMARY KEY,
+    name    VARCHAR(255) NOT NULL,
+    email   VARCHAR(255),
+    note    TEXT,
+    CONSTRAINT uq_clients_name  UNIQUE (name),
+    CONSTRAINT uq_clients_email UNIQUE (email)
 );
 
-CREATE TABLE device_types (
-    id               BIGSERIAL PRIMARY KEY,
-    name             VARCHAR(100) NOT NULL,
-    note             TEXT,
-    CONSTRAINT ux_device_types_name UNIQUE (name)
+CREATE TABLE IF NOT EXISTS locations (
+    id      BIGSERIAL PRIMARY KEY,
+    name    VARCHAR(255) NOT NULL,
+    address VARCHAR(255),
+    note    TEXT,
+    CONSTRAINT uq_locations_name UNIQUE (name)
 );
 
-CREATE TABLE locations (
-    id               BIGSERIAL PRIMARY KEY,
-    name             VARCHAR(200) NOT NULL,
-    address          VARCHAR(400),
-    note             TEXT,
-    CONSTRAINT ux_locations_name UNIQUE (name)
+CREATE TABLE IF NOT EXISTS device_types (
+    id      BIGSERIAL PRIMARY KEY,
+    code    VARCHAR(64)  NOT NULL,
+    name    VARCHAR(128) NOT NULL,
+    note    TEXT,
+    CONSTRAINT uq_device_types_code UNIQUE (code),
+    CONSTRAINT uq_device_types_name UNIQUE (name)
 );
 
-CREATE TABLE clients (
-    id               BIGSERIAL PRIMARY KEY,
-    name             VARCHAR(200) NOT NULL,
-    email            VARCHAR(254),
-    note             TEXT,
-    CONSTRAINT ux_clients_name UNIQUE (name),
-    CONSTRAINT ux_clients_email UNIQUE (email)
+CREATE TABLE IF NOT EXISTS manufacturers (
+    id      BIGSERIAL PRIMARY KEY,
+    code    VARCHAR(64)  NOT NULL,
+    name    VARCHAR(128) NOT NULL,
+    note    TEXT,
+    CONSTRAINT uq_manufacturers_code UNIQUE (code),
+    CONSTRAINT uq_manufacturers_name UNIQUE (name)
 );
 
--- 2) Dependent reference tables
-CREATE TABLE models (
-    id               BIGSERIAL PRIMARY KEY,
-    manufacturer_id  BIGINT NOT NULL REFERENCES manufacturers(id),
-    device_type_id   BIGINT NOT NULL REFERENCES device_types(id),
-    name             VARCHAR(200) NOT NULL,
-    note             TEXT,
-    CONSTRAINT ux_models_manufacturer_name UNIQUE (manufacturer_id, name)
+CREATE TABLE IF NOT EXISTS os (
+    id      BIGSERIAL PRIMARY KEY,
+    code    VARCHAR(64)  NOT NULL,
+    name    VARCHAR(128) NOT NULL,
+    version VARCHAR(64)  NOT NULL,
+    note    TEXT,
+    CONSTRAINT uq_os_code         UNIQUE (code),
+    CONSTRAINT uq_os_name_version UNIQUE (name, version)
 );
 
-CREATE TABLE offices (
-    id               BIGSERIAL PRIMARY KEY,
-    location_id      BIGINT NOT NULL REFERENCES locations(id),
-    room_number      VARCHAR(50) NOT NULL,
-    note             TEXT,
-    CONSTRAINT ux_offices_location_room UNIQUE (location_id, room_number)
+CREATE TABLE IF NOT EXISTS statuses (
+    id      BIGSERIAL PRIMARY KEY,
+    code    VARCHAR(64)  NOT NULL,
+    label   VARCHAR(128) NOT NULL,
+    note    TEXT,
+    CONSTRAINT uq_statuses_code  UNIQUE (code),
+    CONSTRAINT uq_statuses_label UNIQUE (label),
+    CONSTRAINT ck_statuses_code CHECK (code IN ('IN_STOCK','IN_SERVICE','IN_USE','RETIRED'))
 );
 
-CREATE TABLE employees (
-    id               BIGSERIAL PRIMARY KEY,
-    client_id        BIGINT REFERENCES clients(id),
-    first_name       VARCHAR(100) NOT NULL,
-    last_name        VARCHAR(100) NOT NULL,
-    email            VARCHAR(254),
-    phone            VARCHAR(50),
-    note             TEXT,
-    CONSTRAINT ux_employees_email UNIQUE (email)
+CREATE TABLE IF NOT EXISTS products (
+    id      BIGSERIAL PRIMARY KEY,
+    name    VARCHAR(255) NOT NULL,
+    vendor  VARCHAR(255) NOT NULL,
+    note    TEXT,
+    CONSTRAINT uq_products_name_vendor UNIQUE (name, vendor)
 );
 
-CREATE TABLE products (
-    id               BIGSERIAL PRIMARY KEY,
-    name             VARCHAR(200) NOT NULL,
-    vendor           VARCHAR(200) NOT NULL,
-    note             TEXT,
-    CONSTRAINT ux_products_name_vendor UNIQUE (name, vendor)
-);
+-- === Dependent references ===
 
-CREATE TABLE os (
-    id               BIGSERIAL PRIMARY KEY,
-    name             VARCHAR(120) NOT NULL,
-    version          VARCHAR(120) NOT NULL,
-    note             TEXT,
-    CONSTRAINT ux_os_name_version UNIQUE (name, version)
-);
-
--- 3) Core table: assets
-CREATE TABLE assets (
-    id               BIGSERIAL PRIMARY KEY,
-    model_id         BIGINT      NOT NULL REFERENCES models(id),
-    is_retired       BOOLEAN     NOT NULL DEFAULT FALSE,
-    inventory_code   VARCHAR(100) UNIQUE,
-    serial_number    VARCHAR(150) UNIQUE,
-    hostname         VARCHAR(255),
-    ip               INET,
-    dhcp             BOOLEAN     NOT NULL DEFAULT TRUE,
-    purchase_date    DATE,
-    params           JSONB,
-    note             TEXT,
-    create_datetime  TIMESTAMP   NOT NULL DEFAULT NOW(),
-    update_datetime  TIMESTAMP,
-    CONSTRAINT ck_assets_static_ip CHECK (dhcp OR ip IS NOT NULL)
-);
-
--- Partial unique index for static IPs
-CREATE UNIQUE INDEX ux_assets_ip_static
-    ON assets(ip)
-    WHERE dhcp = FALSE AND ip IS NOT NULL;
-
--- JSONB GIN index for flexible querying of params
-CREATE INDEX ix_assets_params_gin ON assets USING GIN (params);
-
--- 4) Licenses (depends on products)
-CREATE TABLE licenses (
+CREATE TABLE IF NOT EXISTS licenses (
     id                 BIGSERIAL PRIMARY KEY,
-    product_id         BIGINT NOT NULL REFERENCES products(id),
+    product_id         BIGINT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
     license_key        VARCHAR(255) NOT NULL,
     license_expires_on DATE,
     account            VARCHAR(255),
     note               TEXT,
-    CONSTRAINT ux_licenses_license_key UNIQUE (license_key)
+    CONSTRAINT uq_licenses_license_key UNIQUE (license_key)
 );
 
--- 5) Asset ↔ Software junction
--- Note: to allow NULLable license_id/product_id with uniqueness, we use a surrogate PK
---       and two partial unique indexes (not a composite PK with NULLs).
-CREATE TABLE asset_software (
+CREATE TABLE IF NOT EXISTS models (
+    id              BIGSERIAL PRIMARY KEY,
+    manufacturer_id BIGINT NOT NULL REFERENCES manufacturers(id) ON DELETE RESTRICT,
+    device_type_id  BIGINT NOT NULL REFERENCES device_types(id)  ON DELETE RESTRICT,
+    name            VARCHAR(128) NOT NULL,
+    note            TEXT,
+    CONSTRAINT uq_models_manufacturer_name UNIQUE (manufacturer_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS employees (
+    id         BIGSERIAL PRIMARY KEY,
+    client_id  BIGINT NOT NULL REFERENCES clients(id) ON DELETE RESTRICT,
+    first_name VARCHAR(64)  NOT NULL,
+    last_name  VARCHAR(64)  NOT NULL,
+    email      VARCHAR(255),
+    phone      VARCHAR(64),
+    note       TEXT,
+    CONSTRAINT uq_employees_email UNIQUE (email)
+);
+
+CREATE TABLE IF NOT EXISTS offices (
+    id          BIGSERIAL PRIMARY KEY,
+    client_id   BIGINT NOT NULL REFERENCES clients(id)   ON DELETE RESTRICT,
+    location_id BIGINT NOT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    room_number VARCHAR(128) NOT NULL,
+    note        TEXT,
+    CONSTRAINT uq_offices_room UNIQUE (client_id, location_id, room_number)
+);
+
+-- === Assets ===
+
+CREATE TABLE IF NOT EXISTS assets (
+    id               BIGSERIAL PRIMARY KEY,
+    client_id        BIGINT NOT NULL REFERENCES clients(id)   ON DELETE RESTRICT,
+    model_id         BIGINT NOT NULL REFERENCES models(id)    ON DELETE RESTRICT,
+    status_id        BIGINT NOT NULL REFERENCES statuses(id)  ON DELETE RESTRICT,
+    os_id            BIGINT NOT NULL REFERENCES os(id)        ON DELETE RESTRICT,
+
+    inventory_code   VARCHAR(128),
+    serial_number    VARCHAR(128),
+
+    hostname         VARCHAR(255),
+    ip               INET,
+    dhcp             BOOLEAN NOT NULL DEFAULT TRUE,
+
+    purchase_date    DATE,
+    params           JSONB,
+    note             TEXT,
+
+    create_datetime  TIMESTAMP NOT NULL DEFAULT now(),
+    update_datetime  TIMESTAMP,
+
+    CONSTRAINT uq_assets_inventory_code UNIQUE (inventory_code),
+    -- Serial number uniqueness is optional per business rules; keep enabled by default:
+    CONSTRAINT uq_assets_serial_number  UNIQUE (serial_number)
+);
+/* Partial unique index: prevent duplicate static IPs (dhcp=false) */
+CREATE UNIQUE INDEX IF NOT EXISTS uq_assets_ip_static
+    ON assets (ip)
+    WHERE dhcp = FALSE;
+
+-- === Movements ===
+
+CREATE TABLE IF NOT EXISTS asset_movements (
     id             BIGSERIAL PRIMARY KEY,
-    asset_id       BIGINT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
-    license_id     BIGINT REFERENCES licenses(id),
-    product_id     BIGINT REFERENCES products(id),
-    installed_at   DATE   NOT NULL DEFAULT CURRENT_DATE,
+    asset_id       BIGINT NOT NULL REFERENCES assets(id)     ON DELETE CASCADE,
+    employee_id    BIGINT     REFERENCES employees(id)       ON DELETE SET NULL, -- nullable
+    office_id      BIGINT NOT NULL REFERENCES offices(id)    ON DELETE RESTRICT,
+
+    movement_type  VARCHAR(16) NOT NULL,
+    effective_from DATE        NOT NULL,
+    effective_to   DATE,
+    recorded_at    TIMESTAMP   NOT NULL DEFAULT now(),
+    note           TEXT,
+
+    CONSTRAINT ck_movement_type CHECK (movement_type IN ('ASSIGN','TRANSFER','REPAIR','RETIRE')),
+    CONSTRAINT ck_movement_dates CHECK (effective_to IS NULL OR effective_to >= effective_from)
+);
+/* Only one active (effective_to IS NULL) movement per asset */
+CREATE UNIQUE INDEX IF NOT EXISTS uq_asset_mov_active
+    ON asset_movements (asset_id)
+    WHERE effective_to IS NULL;
+
+-- === Asset ↔ Software junction ===
+
+CREATE TABLE IF NOT EXISTS asset_software (
+    id             BIGSERIAL PRIMARY KEY,
+    asset_id       BIGINT NOT NULL REFERENCES assets(id)    ON DELETE CASCADE,
+    license_id     BIGINT     REFERENCES licenses(id)       ON DELETE SET NULL,
+    product_id     BIGINT     REFERENCES products(id)       ON DELETE SET NULL,
+    installed_at   DATE NOT NULL DEFAULT current_date,
     uninstalled_at DATE,
     note           TEXT,
-    CONSTRAINT ck_asset_software_refs CHECK (license_id IS NOT NULL OR product_id IS NOT NULL),
-    CONSTRAINT ck_asset_software_period CHECK (uninstalled_at IS NULL OR uninstalled_at >= installed_at)
-);
 
--- Ensure one license cannot be assigned twice to the same asset at the same time
-CREATE UNIQUE INDEX ux_asset_software_asset_license
-    ON asset_software(asset_id, license_id)
+    -- at least one reference present
+    CONSTRAINT ck_asset_sw_ref CHECK (license_id IS NOT NULL OR product_id IS NOT NULL),
+    CONSTRAINT ck_asset_sw_dates CHECK (uninstalled_at IS NULL OR uninstalled_at >= installed_at)
+);
+/* Prevent duplicates while active (uninstalled_at IS NULL) */
+CREATE UNIQUE INDEX IF NOT EXISTS uq_asset_sw_license_active
+    ON asset_software (asset_id, license_id)
     WHERE license_id IS NOT NULL AND uninstalled_at IS NULL;
 
--- Ensure the same free product is not duplicated on the same asset (for active installations)
-CREATE UNIQUE INDEX ux_asset_software_asset_product
-    ON asset_software(asset_id, product_id)
+CREATE UNIQUE INDEX IF NOT EXISTS uq_asset_sw_product_active
+    ON asset_software (asset_id, product_id)
     WHERE product_id IS NOT NULL AND uninstalled_at IS NULL;
 
--- 6) Asset movements (depends on assets, employees, offices)
-CREATE TABLE asset_movements (
-    id             BIGSERIAL PRIMARY KEY,
-    asset_id       BIGINT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
-    employee_id    BIGINT NOT NULL REFERENCES employees(id),
-    office_id      BIGINT NOT NULL REFERENCES offices(id),
-    movement_type  VARCHAR(30) NOT NULL, -- e.g. assign, transfer, repair, retire
-    effective_from DATE NOT NULL,
-    effective_to   DATE,
-    recorded_at    TIMESTAMP NOT NULL DEFAULT NOW(),
-    note           TEXT,
-    CONSTRAINT ck_asset_movements_period CHECK (effective_to IS NULL OR effective_to >= effective_from)
-);
-
--- Optional: One active movement per asset (enforced for rows with no effective_to)
-CREATE UNIQUE INDEX ux_asset_movements_active
-    ON asset_movements(asset_id)
-    WHERE effective_to IS NULL;
+-- === Helpful indexes (lookups) ===
+CREATE INDEX IF NOT EXISTS idx_assets_model       ON assets (model_id);
+CREATE INDEX IF NOT EXISTS idx_assets_status      ON assets (status_id);
+CREATE INDEX IF NOT EXISTS idx_assets_os          ON assets (os_id);
+CREATE INDEX IF NOT EXISTS idx_assets_client      ON assets (client_id);
+CREATE INDEX IF NOT EXISTS idx_assets_serial      ON assets (serial_number);
+CREATE INDEX IF NOT EXISTS idx_movements_asset    ON asset_movements (asset_id);
+CREATE INDEX IF NOT EXISTS idx_movements_office   ON asset_movements (office_id);
+CREATE INDEX IF NOT EXISTS idx_movements_fromdate ON asset_movements (effective_from);
