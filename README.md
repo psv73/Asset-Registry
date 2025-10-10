@@ -129,7 +129,6 @@ Check by startup logs or directly in DB (`\dt` / list tables).
 
 - [Build & Run (Java 21, Gradle, Postgres, Docker)](docs/ASSET-REGISTRY-SETUP.md)
 - [Assets API (v1): endpoints, examples, errors](docs/ASSET-REGISTRY-API.md)
-
 ### Docker Compose (PostgreSQL)
 
 The repository contains a ready-to-use Docker Compose setup for a local PostgreSQL instance.

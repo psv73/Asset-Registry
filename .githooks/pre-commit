@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[pre-commit] Running Gradle sanity checks..."
+
+# Configure JAVA_HOME for Git Bash on Windows (use /c/... path)
+JDK_WIN="/c/Users/sergey/.jdks/dragonwell-21.0.8"
+
+if [ -x "$JDK_WIN/bin/java.exe" ]; then
+  export JAVA_HOME="$JDK_WIN"
+  export PATH="$JAVA_HOME/bin:$PATH"
+else
+  echo "[pre-commit] JDK not found at: $JDK_WIN"
+  echo "[hint] Adjust JDK_WIN path in .githooks/pre-commit"
+  exit 0   # do not block commit if JDK isn't found
+fi
+
+# Fast compile of main sources only (no tests)
+if [ -f "./gradlew" ]; then
+  ./gradlew -q classes
+else
+  echo "[pre-commit] Gradle wrapper not found. Skipping checks."
+fi
+
+echo "[pre-commit] OK"

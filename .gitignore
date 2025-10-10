@@ -1,20 +1,90 @@
-### Gradle ###
+# =========================
+# Build tools / Gradle
+# =========================
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
-### IntelliJ IDEA ###
+# Gradle local caches and config
+.gradle/
+**/build/
+**/.gradletasknamecache
+.gradle-local/
+
+# =========================
+# IDEs
+# =========================
+# IntelliJ IDEA
 .idea/
 *.iml
+*.ipr
+*.iws
 out/
 
-### Logs ###
-*.log
+# VS Code (optional)
+.vscode/
 
-### OS ###
+# =========================
+# OS files
+# =========================
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-### Docs ###
-*~ 
+# =========================
+# Logs & runtime
+# =========================
+*.log
+logs/
+*.out
+*.pid
+*.seed
+
+# =========================
+# Java crash dumps
+# =========================
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# =========================
+# Spring / App config
+# Keep production configs tracked, ignore local overrides
+# =========================
+# local-only profiles
+src/main/resources/application-local.yml
+src/main/resources/application-dev.yml
+src/main/resources/application-*.local.yml
+src/main/resources/*.local.yml
+
+# dotenv files
+.env
+.env.*
+
+# =========================
+# Coverage / Reports
+# =========================
+coverage/
+reports/
+jacoco/
+*.exec
+*.ec
+*.lcov
+
+# =========================
+# Docker artifacts
+# =========================
+.docker/
+docker/*.env
+docker-compose.override.yml
+*.tar
+
+# =========================
+# Docs temp/backup
+# =========================
+*~
 *.bak
+*.tmp
+~$*
