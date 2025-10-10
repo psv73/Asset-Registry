@@ -124,3 +124,38 @@ Check by startup logs or directly in DB (`\dt` / list tables).
 3. Start with a reference entity (e.g., `DeviceType`): entity → repository → GET controller.
 4. Add tests (integration with Testcontainers, unit with H2/Mockito).
 5. Set up CI (Gradle build + tests) and push to GitHub.
+
+## Documentation
+
+- [Build & Run (Java 21, Gradle, Postgres, Docker)](docs/ASSET-REGISTRY-SETUP.md)
+- [Assets API (v1): endpoints, examples, errors](docs/ASSET-REGISTRY-API.md)
+
+### Docker Compose (PostgreSQL)
+
+The repository contains a ready-to-use Docker Compose setup for a local PostgreSQL instance.
+
+- Files: `docs/docker-compose.yml`, `docs/db-init/01-init-asset.sql`
+- Initialization: creates the `asset` role, grants ownership and privileges on the `asset_registry` database.
+
+Start the DB:
+```bash
+docker compose -f docs/docker-compose.yml up -d
+```
+
+Check status:
+```bash
+docker compose -f docs/docker-compose.yml ps
+```
+
+Stop:
+```bash
+docker compose -f docs/docker-compose.yml down
+```
+
+Troubleshooting:
+- If port **5432** is occupied, either stop the process using it or change the mapped port in `docker-compose.yml` (e.g., `15432:5432`), then update your `spring.datasource.url` accordingly.
+- To reset the database completely (fresh start), run:
+  ```bash
+  docker compose -f docs/docker-compose.yml down -v
+  docker compose -f docs/docker-compose.yml up -d
+  ```
