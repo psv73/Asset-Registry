@@ -11,3 +11,7 @@ spring:
     enabled: true
 server:
   port: 8080
+
+springdoc:
+  swagger-ui.enabled: true
+  api-docs.enabled: true

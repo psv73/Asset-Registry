@@ -1,15 +1,19 @@
 package net.psv73.assetregistry.web.handler;
 
-import net.psv73.assetregistry.web.response.ErrorResponse;
-import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.*;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
-
 import jakarta.servlet.http.HttpServletRequest;
+import net.psv73.assetregistry.web.response.ErrorResponse;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
@@ -27,18 +31,18 @@ public class RestExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "validation_failed", "Validation failed", req, fields);
     }
 
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> noResource(org.springframework.web.servlet.resource.NoResourceFoundException ex,
+                                                    jakarta.servlet.http.HttpServletRequest req) {
+        return build(HttpStatus.NOT_FOUND, "not_found", ex.getMessage(), req, null);
+    }
+
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ErrorResponse> notFound(NoSuchElementException ex, HttpServletRequest req) {
         return build(HttpStatus.NOT_FOUND, "not_found", ex.getMessage(), req, null);
     }
 
-    // Фоллбек на неожиданные ошибки -> 500
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> internal(Exception ex, HttpServletRequest req) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "internal_error", ex.getMessage(), req, null);
-    }
-
-    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> duplicate(
             org.springframework.dao.DataIntegrityViolationException ex,
             jakarta.servlet.http.HttpServletRequest req

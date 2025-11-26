@@ -15,6 +15,10 @@
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+springdoc:
+  swagger-ui.enabled: false
+  api-docs.enabled: false
+
 server:
   port: 8080
 
