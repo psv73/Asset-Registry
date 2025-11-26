@@ -7,9 +7,11 @@ import net.psv73.assetregistry.repository.*;
 import net.psv73.assetregistry.web.dto.AssetMapper;
 import net.psv73.assetregistry.web.request.AssetRequestDto;
 import net.psv73.assetregistry.web.response.AssetResponseDto;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import net.psv73.assetregistry.web.ApiPaths.*;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -25,30 +27,29 @@ public class AssetController {
     private final StatusRepository statusRepository;
     private final OsRepository osRepository;
 
-    @GetMapping(Assets.BY_ID)
+    @GetMapping(ApiPaths.Assets.BY_ID)
     public AssetResponseDto getById(@PathVariable("id") Long id) {
         return assetRepository.findById(id)
                 .map(AssetMapper::toResponse)
                 .orElseThrow(() -> new java.util.NoSuchElementException("Asset not found: " + id));
     }
 
-    @GetMapping(Assets.ROOT) // GET /api/v1/assets?inventoryCode=INV-001
-    public List<AssetResponseDto> getAll(
-            @RequestParam(value = "inventoryCode", required = false) String inventoryCode
+    @GetMapping(ApiPaths.Assets.ROOT) // GET /api/v1/assets?inventoryCode=INV-001
+    public Page<AssetResponseDto> getAll(
+            @RequestParam(value = "inventoryCode", required = false) String inventoryCode, Pageable pageable
     ) {
         if (inventoryCode != null && !inventoryCode.isBlank()) {
             return assetRepository.findByInventoryCode(inventoryCode)
-                    .map(AssetMapper::toResponse)
-                    .map(List::of)
-                    .orElseGet(List::of); // пустой список, если не найдено
+                    .map(net.psv73.assetregistry.web.dto.AssetMapper::toResponse)
+                    .map(java.util.List::of)
+                    .map(PageImpl::new)
+                    .orElseGet(() -> new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
         }
-        return assetRepository.findAll().stream()
-                .map(AssetMapper::toResponse)
-                .toList();
+        return assetRepository.findAll(pageable).map(net.psv73.assetregistry.web.dto.AssetMapper::toResponse);
     }
 
 
-    @PostMapping(Assets.ROOT)
+    @PostMapping(ApiPaths.Assets.ROOT)
     public ResponseEntity<AssetResponseDto> create(@RequestBody @Valid AssetRequestDto dto) throws Exception {
         Client client = clientRepository.findById(dto.clientId())
                 .orElseThrow(() -> new IllegalArgumentException("Client not found"));
@@ -86,7 +87,7 @@ public class AssetController {
                 .body(AssetMapper.toResponse(saved));
     }
 
-    @PutMapping(Assets.BY_ID)
+    @PutMapping(ApiPaths.Assets.BY_ID)
     public AssetResponseDto update(@PathVariable Long id,
                                    @RequestBody @Valid AssetRequestDto dto) throws Exception {
         Asset existing = assetRepository.findById(id)
@@ -120,7 +121,7 @@ public class AssetController {
         return AssetMapper.toResponse(assetRepository.save(existing));
     }
 
-    @DeleteMapping(Assets.BY_ID)
+    @DeleteMapping(ApiPaths.Assets.BY_ID)
     public org.springframework.http.ResponseEntity<Void> delete(@PathVariable Long id) {
         var asset = assetRepository.findById(id)
                 .orElseThrow(() -> new java.util.NoSuchElementException("Asset not found: " + id));
