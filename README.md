@@ -114,16 +114,18 @@ Run with local profile:
 - Automatically applied on startup
 - `ddl-auto: validate` — schema is changed only via migrations
 
-## Verify
-Currently no public controllers. The app should start without errors and apply `V1..V3`.  
-Check by startup logs or directly in DB (`\dt` / list tables).
+## Status
+"|:Implemented and tested:
+- `GET /api/v1/health` → `{"status":"UP"}`
+- Assets API v1:
+  - `GET /api/v1/assets/{id}`
+  - `GET /api/v1/assets?inventoryCode=...`
+  - `POST /api/v1/assets`
+  - `PUT /api/v1/assets/{id}`
+  - `DELETE /api/v1/assets/{id}`
 
-## Next Steps
-1. Decide on configuration format (YAML preferred), remove `application.properties` if redundant.
-2. Add a simple health endpoint (via Spring Actuator or `HealthController`).
-3. Start with a reference entity (e.g., `DeviceType`): entity → repository → GET controller.
-4. Add tests (integration with Testcontainers, unit with H2/Mockito).
-5. Set up CI (Gradle build + tests) and push to GitHub.
+Docs:
+- `docs/ASSET-REGISTRY-API.md` describes the public REST API contract.
 
 ## Documentation
 

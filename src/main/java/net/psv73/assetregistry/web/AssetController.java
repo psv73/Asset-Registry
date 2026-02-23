@@ -7,15 +7,14 @@ import net.psv73.assetregistry.repository.*;
 import net.psv73.assetregistry.web.dto.AssetMapper;
 import net.psv73.assetregistry.web.request.AssetRequestDto;
 import net.psv73.assetregistry.web.response.AssetResponseDto;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.InetAddress;
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

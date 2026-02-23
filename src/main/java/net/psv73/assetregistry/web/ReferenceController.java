@@ -1,7 +1,10 @@
 package net.psv73.assetregistry.web;
 
 import lombok.RequiredArgsConstructor;
-import net.psv73.assetregistry.repository.*;
+import net.psv73.assetregistry.repository.ClientRepository;
+import net.psv73.assetregistry.repository.ModelRepository;
+import net.psv73.assetregistry.repository.OsRepository;
+import net.psv73.assetregistry.repository.StatusRepository;
 import net.psv73.assetregistry.web.response.IdNameDto;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,32 +27,32 @@ public class ReferenceController {
         return list.stream().map(f).sorted(Comparator.comparing(IdNameDto::name)).toList();
     }
 
-    @GetMapping("/api/v1/statuses")
+    @GetMapping(ApiPaths.Ref.STATUSES)
     public List<IdNameDto> statuses() {
         return map(statusRepository.findAll(), s -> new IdNameDto(s.getId(), s.getCode()));
     }
 
-    @GetMapping("/api/v1/oses")
+    @GetMapping(ApiPaths.Ref.OSES)
     public List<IdNameDto> oses() {
         return map(osRepository.findAll(), o -> new IdNameDto(o.getId(), o.getName()));
     }
 
-    @GetMapping("/api/v1/clients")
+    @GetMapping(ApiPaths.Ref.CLIENTS)
     public List<IdNameDto> clients() {
         return map(clientRepository.findAll(), c -> new IdNameDto(c.getId(), c.getName()));
     }
 
-    @GetMapping("/api/v1/models")
+    @GetMapping(ApiPaths.Ref.MODELS)
     public List<IdNameDto> models() {
         return map(modelRepository.findAll(), m -> new IdNameDto(m.getId(), m.getName()));
     }
 
-    @GetMapping("/api/v1/manufacturers")
+    @GetMapping(ApiPaths.Ref.MANUFACTURERS)
     public List<IdNameDto> manufacturers() {
         return map(manufacturerRepository.findAll(), m -> new IdNameDto(m.getId(), m.getName()));
     }
 
-    @GetMapping("/api/v1/device-types")
+    @GetMapping(ApiPaths.Ref.DEVICE_TYPES)
     public List<IdNameDto> deviceTypes() {
         return map(deviceTypeRepository.findAll(), t -> new IdNameDto(t.getId(), t.getName()));
     }
