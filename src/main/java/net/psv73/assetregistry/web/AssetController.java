@@ -8,8 +8,8 @@ import net.psv73.assetregistry.web.dto.AssetMapper;
 import net.psv73.assetregistry.web.request.AssetRequestDto;
 import net.psv73.assetregistry.web.response.AssetResponseDto;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,18 +33,20 @@ public class AssetController {
                 .orElseThrow(() -> new java.util.NoSuchElementException("Asset not found: " + id));
     }
 
-    @GetMapping(ApiPaths.Assets.ROOT) // GET /api/v1/assets?inventoryCode=INV-001
+    @GetMapping(ApiPaths.Assets.ROOT)
     public Page<AssetResponseDto> getAll(
-            @RequestParam(value = "inventoryCode", required = false) String inventoryCode, Pageable pageable
+            @RequestParam(value = "inventoryCode", required = false) String inventoryCode,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable
     ) {
         if (inventoryCode != null && !inventoryCode.isBlank()) {
-            return assetRepository.findByInventoryCode(inventoryCode)
-                    .map(net.psv73.assetregistry.web.dto.AssetMapper::toResponse)
-                    .map(java.util.List::of)
-                    .map(PageImpl::new)
-                    .orElseGet(() -> new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+            return assetRepository
+                    .findAllByInventoryCode(inventoryCode, pageable)
+                    .map(AssetMapper::toResponse);
         }
-        return assetRepository.findAll(pageable).map(net.psv73.assetregistry.web.dto.AssetMapper::toResponse);
+
+        return assetRepository
+                .findAll(pageable)
+                .map(AssetMapper::toResponse);
     }
 
 

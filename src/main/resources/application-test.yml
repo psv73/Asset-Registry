@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/asset_registry
+    username: asset
+    password: asset
+  flyway:
+    enabled: true
